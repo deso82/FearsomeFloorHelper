@@ -131,6 +131,12 @@
                     </div>
 
                     <div class="control-section">
+                        <h3>Snapshot & Predict</h3>
+                        <p class="snap-desc">Capture the board, pick a monster card, and preview the full predicted path. Download or share the result.</p>
+                        <button id="btn-snapshot" class="btn btn-snapshot">Snapshot Board &amp; Predict Path</button>
+                    </div>
+
+                    <div class="control-section">
                         <h3>Event Log</h3>
                         <div id="event-log" class="event-log"></div>
                     </div>
@@ -500,6 +506,34 @@
             </div>
         </section>
     </main>
+
+    <!-- SNAPSHOT MODAL -->
+    <div id="snapshot-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Board Snapshot &amp; Monster Prediction</h2>
+                <button id="snap-close" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="snap-section">
+                    <h3>Select Monster Card to Preview</h3>
+                    <p class="snap-hint">Pick a card to simulate the monster's full movement path on the current board. Choose "None" for a plain board snapshot.</p>
+                    <div id="snap-card-picker" class="snap-card-picker"></div>
+                </div>
+                <div class="snap-section snap-preview-section">
+                    <div id="snap-preview" class="snap-preview"></div>
+                    <div class="snap-sidebar">
+                        <h4>Movement Log</h4>
+                        <div id="snap-log" class="snap-log"></div>
+                    </div>
+                </div>
+                <div class="snap-actions">
+                    <button id="snap-download" class="btn btn-primary">Download Image</button>
+                    <button id="snap-share" class="btn btn-snapshot">Share / Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer>
         <p>Fearsome Floor Helper &mdash; A fan-made tool for <em>Finstere Flure</em> by Friedemann Friese</p>
