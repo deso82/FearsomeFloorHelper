@@ -154,7 +154,7 @@ header h1 {
 
 .game-board {
     display: grid;
-    grid-template-columns: repeat(8, var(--cell-size));
+    grid-template-columns: repeat(7, var(--cell-size));
     grid-template-rows: repeat(12, var(--cell-size));
     gap: var(--board-gap);
     background: #111;
@@ -190,6 +190,12 @@ header h1 {
 .cell.entrance-cell {
     background: linear-gradient(135deg, #5c3a1a, var(--orange));
     border: 2px solid var(--orange);
+}
+
+.cell.wall-cell {
+    background: #111;
+    cursor: default !important;
+    pointer-events: none;
 }
 
 .cell.highlight-path {
