@@ -67,10 +67,20 @@
                     </div>
 
                     <div class="control-section">
+                        <h3>Player Pawns</h3>
+                        <p class="pawn-hint">Click a pawn below to pick it up, then click the board to place it. Click a pawn already on the board to move it.</p>
+                        <div id="pawn-tray" class="pawn-tray"></div>
+                        <div id="selected-indicator" class="selected-indicator"></div>
+                    </div>
+
+                    <div class="control-section">
                         <h3>Place Mode</h3>
                         <div class="place-modes">
                             <button class="place-btn active" data-place="select" title="Select & move pieces">
                                 <span class="icon">&#9995;</span> Select
+                            </button>
+                            <button class="place-btn" data-place="monster" title="Click board to reposition monster">
+                                <span class="icon">&#128122;</span> Monster
                             </button>
                             <button class="place-btn" data-place="stone" title="Place stone (blocks sight & movement)">
                                 <span class="icon">&#9632;</span> Stone
@@ -90,7 +100,7 @@
                             <button class="place-btn" data-place="teleporter" title="Place teleporter (must place in pairs)">
                                 <span class="icon">&#9741;</span> Teleport
                             </button>
-                            <button class="place-btn" data-place="erase" title="Remove tile from cell">
+                            <button class="place-btn" data-place="erase" title="Remove tile or pawn from cell">
                                 <span class="icon">&#10060;</span> Erase
                             </button>
                         </div>

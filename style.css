@@ -911,6 +911,171 @@ footer {
     border-radius: 3px;
 }
 
+/* === PAWN TRAY === */
+.pawn-hint {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-bottom: 0.6rem;
+}
+
+.pawn-tray {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.pawn-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg-dark);
+    border-radius: 6px;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.pawn-player-label {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.7rem;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+    flex-shrink: 0;
+}
+
+.pawn-slots {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.pawn-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0.15rem;
+    border-radius: 6px;
+    border: 2px solid transparent;
+}
+
+.pawn-slot:hover:not(.exited):not(.dead) {
+    border-color: var(--yellow);
+    transform: translateY(-2px);
+}
+
+.pawn-slot.selected {
+    border-color: var(--yellow) !important;
+    background: rgba(241, 196, 15, 0.15);
+    box-shadow: 0 0 8px rgba(241, 196, 15, 0.3);
+}
+
+.pawn-slot.available .pawn-circle {
+    box-shadow: 0 0 6px rgba(255,255,255,0.3);
+}
+
+.pawn-slot.on-board .pawn-circle {
+    opacity: 0.5;
+    border-style: dashed;
+}
+
+.pawn-slot.exited {
+    cursor: default;
+}
+
+.pawn-slot.exited .pawn-circle {
+    background: var(--green) !important;
+    opacity: 0.7;
+}
+
+.pawn-slot.dead {
+    cursor: default;
+}
+
+.pawn-slot.dead .pawn-circle {
+    background: #555 !important;
+    opacity: 0.4;
+}
+
+.pawn-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    border: 2px solid rgba(255,255,255,0.4);
+    transition: all 0.2s;
+}
+
+.pawn-side-tag {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    line-height: 1;
+}
+
+/* === SELECTED INDICATOR === */
+.selected-indicator {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(241, 196, 15, 0.12);
+    border: 1px solid var(--yellow);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    margin-top: 0.5rem;
+}
+
+.indicator-dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+    border: 2px solid var(--yellow);
+    flex-shrink: 0;
+}
+
+.indicator-text {
+    font-size: 0.78rem;
+    color: var(--yellow);
+    flex: 1;
+}
+
+.indicator-cancel {
+    background: none;
+    border: 1px solid var(--text-dim);
+    color: var(--text-dim);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 0.15rem 0.35rem;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.indicator-cancel:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
 /* === SNAPSHOT BUTTON === */
 .btn-snapshot {
     background: linear-gradient(135deg, var(--purple), var(--accent));

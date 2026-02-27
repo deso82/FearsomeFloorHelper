@@ -182,6 +182,8 @@ function render() {
     renderBoard();
     renderDeck();
     renderTurnInfo();
+    renderPawnTray();
+    renderSelectedIndicator();
     updateButtons();
 }
 
@@ -291,12 +293,152 @@ function updateButtons() {
     document.getElementById('btn-auto-monster').disabled = !hasSteps;
 }
 
+// === PAWN TRAY ===
+function renderPawnTray() {
+    const tray = document.getElementById('pawn-tray');
+    tray.innerHTML = '';
+
+    state.players.forEach((player, pIdx) => {
+        const row = document.createElement('div');
+        row.className = 'pawn-row';
+
+        // Player color indicator + label
+        const label = document.createElement('div');
+        label.className = 'pawn-player-label';
+        label.style.backgroundColor = player.color;
+        label.textContent = `P${pIdx + 1}`;
+        row.appendChild(label);
+
+        // Token slots
+        const slots = document.createElement('div');
+        slots.className = 'pawn-slots';
+
+        player.tokens.forEach(token => {
+            const slot = document.createElement('div');
+            slot.className = 'pawn-slot';
+
+            const circle = document.createElement('div');
+            circle.className = 'pawn-circle';
+            circle.style.backgroundColor = player.color;
+
+            const val = token.currentSide === 0 ? token.sideA : token.sideB;
+
+            if (token.exited) {
+                slot.classList.add('exited');
+                circle.textContent = '\u2713';
+                circle.title = `${token.sideA}/${token.sideB} - Exited!`;
+            } else if (token.eaten) {
+                slot.classList.add('dead');
+                circle.textContent = '\u2716';
+                circle.title = `${token.sideA}/${token.sideB} - Permanently eaten`;
+            } else if (token.onBoard) {
+                slot.classList.add('on-board');
+                circle.textContent = val;
+                circle.title = `${token.sideA}/${token.sideB} - On board at (${ROW_LETTERS[token.row]}${COL_LETTERS[token.col]})`;
+                // Clicking picks it up from the board
+                slot.addEventListener('click', () => {
+                    selectTokenFromTray(token);
+                });
+            } else {
+                // Available to place
+                slot.classList.add('available');
+                circle.textContent = val;
+                circle.title = `${token.sideA}/${token.sideB} - Click to place on board`;
+                slot.addEventListener('click', () => {
+                    selectTokenFromTray(token);
+                });
+            }
+
+            // Highlight if selected
+            if (state.selectedToken && state.selectedToken.id === token.id) {
+                slot.classList.add('selected');
+            }
+
+            // Side indicator
+            const sideTag = document.createElement('span');
+            sideTag.className = 'pawn-side-tag';
+            if (!token.exited && !token.eaten) {
+                sideTag.textContent = `${token.sideA}/${token.sideB}`;
+            }
+
+            slot.appendChild(circle);
+            slot.appendChild(sideTag);
+            slots.appendChild(slot);
+        });
+
+        row.appendChild(slots);
+        tray.appendChild(row);
+    });
+}
+
+function renderSelectedIndicator() {
+    const el = document.getElementById('selected-indicator');
+    if (!state.selectedToken) {
+        el.innerHTML = '';
+        el.style.display = 'none';
+        return;
+    }
+
+    el.style.display = 'flex';
+    const token = state.selectedToken;
+    const player = state.players[token.player];
+    const val = token.currentSide === 0 ? token.sideA : token.sideB;
+
+    const dot = document.createElement('span');
+    dot.className = 'indicator-dot';
+    dot.style.backgroundColor = player.color;
+    dot.textContent = val;
+
+    const text = document.createElement('span');
+    text.className = 'indicator-text';
+    if (token.onBoard) {
+        text.textContent = `P${token.player + 1} (${token.sideA}/${token.sideB}) selected - click board to move (max ${val} spaces)`;
+    } else {
+        text.textContent = `P${token.player + 1} (${token.sideA}/${token.sideB}) selected - click an empty cell to place`;
+    }
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'indicator-cancel';
+    cancelBtn.textContent = '\u2716';
+    cancelBtn.title = 'Deselect';
+    cancelBtn.addEventListener('click', () => {
+        state.selectedToken = null;
+        render();
+    });
+
+    el.innerHTML = '';
+    el.appendChild(dot);
+    el.appendChild(text);
+    el.appendChild(cancelBtn);
+}
+
+function selectTokenFromTray(token) {
+    if (token.exited || token.eaten) return;
+
+    state.selectedToken = token;
+
+    // Auto-switch to select mode so board clicks place/move the token
+    state.placeMode = 'select';
+    document.querySelectorAll('.place-btn').forEach(b => b.classList.remove('active'));
+    const selectBtn = document.querySelector('.place-btn[data-place="select"]');
+    if (selectBtn) selectBtn.classList.add('active');
+
+    if (token.onBoard) {
+        logEvent(`Selected ${getTokenLabel(token)} on board at (${ROW_LETTERS[token.row]}${COL_LETTERS[token.col]}). Click a cell to move it.`, 'info');
+    } else {
+        logEvent(`Selected ${getTokenLabel(token)} from tray. Click a cell to place it on the board.`, 'info');
+    }
+    render();
+}
+
 // === CELL CLICK HANDLER ===
 function onCellClick(row, col) {
     const mode = state.placeMode;
 
     if (mode === 'select') {
         handleSelect(row, col);
+    } else if (mode === 'monster') {
+        handleMonsterPlace(row, col);
     } else if (mode === 'erase') {
         handleErase(row, col);
     } else if (mode === 'teleporter') {
@@ -309,16 +451,18 @@ function onCellClick(row, col) {
 }
 
 function handleSelect(row, col) {
-    const tokens = getTokensAt(row, col);
-    if (tokens.length > 0) {
-        state.selectedToken = tokens[0];
-        logEvent(`Selected ${getTokenLabel(tokens[0])}`, 'info');
-        return;
-    }
-
+    // If we have a selected token and click an empty(ish) cell, place/move it there
     if (state.selectedToken) {
         const token = state.selectedToken;
+        // Clicking the same cell as the token = deselect
+        if (token.onBoard && token.row === row && token.col === col) {
+            state.selectedToken = null;
+            logEvent(`Deselected ${getTokenLabel(token)}.`, 'info');
+            return;
+        }
+
         if (token.onBoard) {
+            // Move existing token on board
             const maxMove = token.currentSide === 0 ? token.sideA : token.sideB;
             const dist = Math.abs(token.row - row) + Math.abs(token.col - col);
 
@@ -328,24 +472,59 @@ function handleSelect(row, col) {
                 logEvent(`Invalid move. Max ${maxMove} spaces orthogonally.`, 'info');
             }
         } else {
+            // Place unplaced token on board
+            if (isMonsterAt(row, col)) {
+                logEvent('Cannot place a pawn on the monster!', 'info');
+                return;
+            }
+            const tile = state.board[row][col];
+            if (tile === CELL_STONE || tile === CELL_CRYSTAL || tile === CELL_TURN_RIGHT ||
+                tile === CELL_TURN_180 || tile === CELL_TELEPORTER) {
+                logEvent('Cannot place a pawn on that tile.', 'info');
+                return;
+            }
             token.row = row;
             token.col = col;
             token.onBoard = true;
-            logEvent(`${getTokenLabel(token)} placed on board at (${row},${col}).`, 'info');
+            logEvent(`${getTokenLabel(token)} placed at ${ROW_LETTERS[row]}${COL_LETTERS[col]}.`, 'info');
             flipToken(token);
             state.selectedToken = null;
         }
         return;
     }
 
-    const unplaced = getAllUnplacedTokens();
-    if (unplaced.length > 0) {
-        state.selectedToken = unplaced[0];
-        logEvent(`Selected unplaced ${getTokenLabel(unplaced[0])}. Click a cell to place it.`, 'info');
+    // No token selected - check if clicking a token on the board
+    const tokens = getTokensAt(row, col);
+    if (tokens.length > 0) {
+        state.selectedToken = tokens[0];
+        logEvent(`Selected ${getTokenLabel(tokens[0])} at ${ROW_LETTERS[row]}${COL_LETTERS[col]}.`, 'info');
+        return;
     }
 }
 
+function handleMonsterPlace(row, col) {
+    const tile = state.board[row][col];
+    if (tile === CELL_STONE || tile === CELL_CRYSTAL) {
+        logEvent('Cannot place monster on a stone.', 'info');
+        return;
+    }
+    state.monster.row = row;
+    state.monster.col = col;
+    logEvent(`Monster placed at ${ROW_LETTERS[row]}${COL_LETTERS[col]}, facing ${state.monster.dir}.`, 'monster');
+}
+
 function handleErase(row, col) {
+    // Remove pawn first if present
+    const tokens = getTokensAt(row, col);
+    if (tokens.length > 0) {
+        const token = tokens[0];
+        token.onBoard = false;
+        token.row = -1;
+        token.col = -1;
+        logEvent(`${getTokenLabel(token)} removed from board.`, 'info');
+        return;
+    }
+
     if (state.board[row][col] !== CELL_EMPTY) {
         if (state.board[row][col] === CELL_TELEPORTER) {
             removeTeleporterAt(row, col);
@@ -404,7 +583,7 @@ function moveToken(token, toRow, toCol) {
             logEvent(`${getTokenLabel(token)} slides on blood pool!`, 'info');
         }
 
-        logEvent(`${getTokenLabel(token)} moved to (${toRow},${toCol}).`, 'info');
+        logEvent(`${getTokenLabel(token)} moved to ${ROW_LETTERS[toRow]}${COL_LETTERS[toCol]}.`, 'info');
     }
 
     flipToken(token);
