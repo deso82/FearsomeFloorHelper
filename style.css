@@ -192,12 +192,6 @@ header h1 {
     border: 2px solid var(--orange);
 }
 
-.cell.wall-cell {
-    background: #111;
-    cursor: default !important;
-    pointer-events: none;
-}
-
 .cell.highlight-path {
     background: rgba(233, 69, 96, 0.3) !important;
 }

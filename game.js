@@ -11,8 +11,8 @@ const DIR = {
     right: [ 0,  1],
 };
 
-// Wall letters for wrapping (rows 0-11 map to letters M,L,K,J,I,H,G,F,E,D,C,B)
-const ROW_LETTERS = ['M','L','K','J','I','H','G','F','E','D','C','B'];
+// Wall letters for wrapping (rows 0-11 map to letters B,C,D,E,F,G,H,I,J,K,L,M)
+const ROW_LETTERS = ['B','C','D','E','F','G','H','I','J','K','L','M'];
 // Column letters (cols 0-6 map to A,B,C,D,E,F,G)
 const COL_LETTERS = ['A','B','C','D','E','F','G'];
 
@@ -55,17 +55,14 @@ const CELL_TURN_RIGHT = 'turn-right';
 const CELL_TURN_180   = 'turn-180';
 const CELL_BLOOD      = 'blood';
 const CELL_TELEPORTER = 'teleporter';
-const CELL_WALL       = 'wall';
 
-// Wall cells: irregular bottom-right corner (entrance notch)
-const WALL_CELLS = new Set(['10,6', '11,5', '11,6']);
-function isWallCell(r, c) {
-    return WALL_CELLS.has(`${r},${c}`);
-}
+// Exit cell: top-left corner (monster starts here)
+const EXIT_ROW = 0;
+const EXIT_COL = 0;
 
-// Entrance cell: rightmost accessible cell on bottom row
+// Entrance cell: bottom-right corner (players enter here)
 const ENTRANCE_ROW = 11;
-const ENTRANCE_COL = 4;
+const ENTRANCE_COL = 6;
 
 // === GAME STATE ===
 const state = {
@@ -98,7 +95,7 @@ function initBoard() {
     for (let r = 0; r < ROWS; r++) {
         state.board[r] = [];
         for (let c = 0; c < COLS; c++) {
-            state.board[r][c] = isWallCell(r, c) ? CELL_WALL : CELL_EMPTY;
+            state.board[r][c] = CELL_EMPTY;
         }
     }
     state.teleporterPairs = [];
@@ -175,19 +172,17 @@ function newGame() {
 
 function placeDefaultSetup() {
     const defaultStones = [
-        [2, 3], [2, 5],
-        [4, 1], [4, 6],
-        [6, 2], [6, 4],
-        [8, 3], [8, 5],
-        [10, 1], [10, 5],
+        [2, 2], [2, 5],
+        [4, 1], [4, 4],
+        [6, 2], [6, 5],
+        [8, 1], [8, 4],
+        [10, 2], [10, 5],
     ];
     defaultStones.forEach(([r, c]) => {
-        if (!isWallCell(r, c)) {
-            state.board[r][c] = CELL_STONE;
-        }
+        state.board[r][c] = CELL_STONE;
     });
     state.board[5][3] = CELL_BLOOD;
-    state.board[5][4] = CELL_BLOOD;
+    state.board[6][3] = CELL_BLOOD;
 }
 
 // === RENDERING ===
@@ -211,14 +206,8 @@ function renderBoard() {
             cell.dataset.row = r;
             cell.dataset.col = c;
 
-            if (r === 0 && c === 0) cell.classList.add('exit-cell');
+            if (r === EXIT_ROW && c === EXIT_COL) cell.classList.add('exit-cell');
             if (r === ENTRANCE_ROW && c === ENTRANCE_COL) cell.classList.add('entrance-cell');
-            if (isWallCell(r, c)) {
-                cell.classList.add('wall-cell');
-                cell.style.cursor = 'default';
-                boardEl.appendChild(cell);
-                continue;
-            }
 
             // Monster path highlight
             const pathIdx = state.monsterPath.findIndex(p => p.row === r && p.col === c);
@@ -452,7 +441,6 @@ function selectTokenFromTray(token) {
 
 // === CELL CLICK HANDLER ===
 function onCellClick(row, col) {
-    if (isWallCell(row, col)) return;
     const mode = state.placeMode;
 
     if (mode === 'select') {
@@ -498,7 +486,7 @@ function handleSelect(row, col) {
                 return;
             }
             const tile = state.board[row][col];
-            if (tile === CELL_WALL || tile === CELL_STONE || tile === CELL_CRYSTAL || tile === CELL_TURN_RIGHT ||
+            if (tile === CELL_STONE || tile === CELL_CRYSTAL || tile === CELL_TURN_RIGHT ||
                 tile === CELL_TURN_180 || tile === CELL_TELEPORTER) {
                 logEvent('Cannot place a pawn on that tile.', 'info');
                 return;
@@ -524,10 +512,6 @@ function handleSelect(row, col) {
 
 function handleMonsterPlace(row, col) {
     const tile = state.board[row][col];
-    if (tile === CELL_WALL) {
-        logEvent('Cannot place monster on a wall.', 'info');
-        return;
-    }
     if (tile === CELL_STONE || tile === CELL_CRYSTAL) {
         logEvent('Cannot place monster on a stone.', 'info');
         return;
@@ -538,7 +522,6 @@ function handleMonsterPlace(row, col) {
 }
 
 function handleErase(row, col) {
-    if (isWallCell(row, col)) return;
     // Remove pawn first if present
     const tokens = getTokensAt(row, col);
     if (tokens.length > 0) {
@@ -560,14 +543,14 @@ function handleErase(row, col) {
 }
 
 function handleTilePlace(row, col, type) {
-    if (state.board[row][col] === CELL_EMPTY && !isWallCell(row, col) && !isMonsterAt(row, col) && getTokensAt(row, col).length === 0) {
+    if (state.board[row][col] === CELL_EMPTY && !isMonsterAt(row, col) && getTokensAt(row, col).length === 0) {
         state.board[row][col] = type;
         logEvent(`Placed ${type} at (${row},${col}).`, 'info');
     }
 }
 
 function handleTeleporterPlace(row, col) {
-    if (state.board[row][col] !== CELL_EMPTY || isWallCell(row, col)) return;
+    if (state.board[row][col] !== CELL_EMPTY) return;
 
     if (!state.teleporterPlacing) {
         state.board[row][col] = CELL_TELEPORTER;
@@ -592,7 +575,7 @@ function handleTeleporterPlace(row, col) {
 
 // === PLAYER MOVEMENT ===
 function moveToken(token, toRow, toCol) {
-    if (toRow === 0 && toCol === 0) {
+    if (toRow === EXIT_ROW && toCol === EXIT_COL) {
         token.onBoard = false;
         token.exited = true;
         token.row = -1;
@@ -621,9 +604,8 @@ function flipToken(token) {
 
 function isValidPlayerMove(token, toRow, toCol) {
     if (toRow < 0 || toRow >= ROWS || toCol < 0 || toCol >= COLS) return false;
-    if (isWallCell(toRow, toCol)) return false;
     const tokensAtDest = getTokensAt(toRow, toCol);
-    if (tokensAtDest.length > 0 && !(toRow === 0 && toCol === 0)) return false;
+    if (tokensAtDest.length > 0 && !(toRow === EXIT_ROW && toCol === EXIT_COL)) return false;
     if (isMonsterAt(toRow, toCol)) return false;
     if (state.board[toRow][toCol] === CELL_TELEPORTER) return false;
     return true;
@@ -724,7 +706,7 @@ function stepMonster() {
         }
     }
 
-    if (newRow < 0 || newRow >= ROWS || newCol < 0 || newCol >= COLS || isWallCell(newRow, newCol)) {
+    if (newRow < 0 || newRow >= ROWS || newCol < 0 || newCol >= COLS) {
         const wrapped = wrapPosition(newRow, newCol, monster.dir);
         newRow = wrapped.row;
         newCol = wrapped.col;
@@ -834,7 +816,6 @@ function lookInDirection(fromRow, fromCol, dir) {
     let dist = 1;
 
     while (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
-        if (isWallCell(r, c)) return null;
         const tile = state.board[r][c];
 
         if (tile === CELL_STONE || tile === CELL_TURN_RIGHT || tile === CELL_TURN_180) {
@@ -860,7 +841,7 @@ function pushStone(stoneRow, stoneCol, dir) {
     const behindRow = stoneRow + dr;
     const behindCol = stoneCol + dc;
 
-    if (behindRow < 0 || behindRow >= ROWS || behindCol < 0 || behindCol >= COLS || isWallCell(behindRow, behindCol)) {
+    if (behindRow < 0 || behindRow >= ROWS || behindCol < 0 || behindCol >= COLS) {
         state.board[stoneRow][stoneCol] = CELL_EMPTY;
         logEvent(`Stone pushed off the board from (${stoneRow},${stoneCol})!`, 'monster');
         return true;
@@ -901,12 +882,12 @@ function slideOnBlood(row, col, dir) {
     let r = row;
     let c = col;
 
-    while (r >= 0 && r < ROWS && c >= 0 && c < COLS && !isWallCell(r, c) && state.board[r][c] === CELL_BLOOD) {
+    while (r >= 0 && r < ROWS && c >= 0 && c < COLS && state.board[r][c] === CELL_BLOOD) {
         r += dr;
         c += dc;
     }
 
-    if (r < 0 || r >= ROWS || c < 0 || c >= COLS || isWallCell(r, c)) {
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) {
         return { row: r - dr, col: c - dc };
     }
 
@@ -1126,16 +1107,12 @@ function renderBoardToCanvas(predictedPath, predictedEvents) {
             const h = SNAP_CELL - 2;
 
             // Cell background
-            if (r === 0 && c === 0) {
+            if (r === EXIT_ROW && c === EXIT_COL) {
                 ctx.fillStyle = '#1a5c2a';
                 ctx.fillRect(x, y, w, h);
                 ctx.strokeStyle = C.exit;
                 ctx.lineWidth = 2;
                 ctx.strokeRect(x, y, w, h);
-            } else if (isWallCell(r, c)) {
-                ctx.fillStyle = '#111';
-                ctx.fillRect(x, y, w, h);
-                continue;
             } else if (r === ENTRANCE_ROW && c === ENTRANCE_COL) {
                 ctx.fillStyle = '#5c3a1a';
                 ctx.fillRect(x, y, w, h);
@@ -1433,7 +1410,6 @@ function predictMonsterPath(card) {
         const [dr, dc] = DIR[dir];
         let r = fromRow + dr, c = fromCol + dc, dist = 1;
         while (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
-            if (isWallCell(r, c)) return null;
             const tile = simBoard[r][c];
             if (tile === CELL_STONE || tile === CELL_TURN_RIGHT || tile === CELL_TURN_180) return null;
             const toks = simGetTokensAt(r, c);
@@ -1474,10 +1450,10 @@ function predictMonsterPath(card) {
     function simSlideBlood(row, col, dir) {
         const [dr, dc] = DIR[dir];
         let r = row, c = col;
-        while (r >= 0 && r < ROWS && c >= 0 && c < COLS && !isWallCell(r, c) && simBoard[r][c] === CELL_BLOOD) {
+        while (r >= 0 && r < ROWS && c >= 0 && c < COLS && simBoard[r][c] === CELL_BLOOD) {
             r += dr; c += dc;
         }
-        if (r < 0 || r >= ROWS || c < 0 || c >= COLS || isWallCell(r, c)) return { row: r - dr, col: c - dc };
+        if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return { row: r - dr, col: c - dc };
         if (simBoard[r][c] !== CELL_EMPTY) return { row: r - dr, col: c - dc };
         return { row: r, col: c };
     }
@@ -1485,7 +1461,7 @@ function predictMonsterPath(card) {
     function simPushStone(sr, sc, dir) {
         const [dr, dc] = DIR[dir];
         const br = sr + dr, bc = sc + dc;
-        if (br < 0 || br >= ROWS || bc < 0 || bc >= COLS || isWallCell(br, bc)) {
+        if (br < 0 || br >= ROWS || bc < 0 || bc >= COLS) {
             simBoard[sr][sc] = CELL_EMPTY;
             return true;
         }
@@ -1527,7 +1503,7 @@ function predictMonsterPath(card) {
         let nc = simMonster.col + dc;
 
         // Wall wrap
-        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS || isWallCell(nr, nc)) {
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) {
             const w = wrapPosition(nr, nc, simMonster.dir);
             nr = w.row; nc = w.col;
             log.push(`Step ${path.length + 1}: Wraps through wall to (${nr},${nc})`);
