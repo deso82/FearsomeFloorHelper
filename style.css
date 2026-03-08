@@ -18,7 +18,7 @@
     --blue: #3498db;
     --purple: #9b59b6;
     --orange: #e67e22;
-    --cell-size: 48px;
+    --cell-size: 36px;
     --board-gap: 1px;
 }
 
@@ -154,8 +154,8 @@ header h1 {
 
 .game-board {
     display: grid;
-    grid-template-columns: repeat(7, var(--cell-size));
-    grid-template-rows: repeat(12, var(--cell-size));
+    grid-template-columns: repeat(16, var(--cell-size));
+    grid-template-rows: repeat(11, var(--cell-size));
     gap: var(--board-gap);
     background: #111;
     border: 2px solid var(--bg-light);
@@ -190,6 +190,12 @@ header h1 {
 .cell.entrance-cell {
     background: linear-gradient(135deg, #5c3a1a, var(--orange));
     border: 2px solid var(--orange);
+}
+
+.cell.wall-cell {
+    background: #111 !important;
+    cursor: default !important;
+    pointer-events: none;
 }
 
 .cell.highlight-path {
@@ -1311,13 +1317,13 @@ footer {
     }
 
     :root {
-        --cell-size: 38px;
+        --cell-size: 30px;
     }
 }
 
-@media (max-width: 500px) {
+@media (max-width: 600px) {
     :root {
-        --cell-size: 32px;
+        --cell-size: 22px;
     }
 
     header h1 {
