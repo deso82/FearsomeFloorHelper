@@ -57,19 +57,18 @@ const CELL_BLOOD      = 'blood';
 const CELL_TELEPORTER = 'teleporter';
 const CELL_WALL       = 'wall';
 
-// Wall cells: staircase entrance at bottom-right, plus corner notches
+// Wall cells: staircases at top-right and bottom-left corners
 const WALL_CELLS = new Set([
-    // Bottom-left exit corridor notch
-    '9,0',
-    '10,0', '10,1',
-    // Top-right corner notch
-    '0,14', '0,15',
-    '1,15',
-    // Bottom-right entrance staircase
-    '7,15',
-    '8,14', '8,15',
-    '9,13', '9,14', '9,15',
-    '10,12', '10,13', '10,14', '10,15',
+    // Top-right staircase (starts after column L, index 11)
+    '0,12', '0,13', '0,14', '0,15',
+    '1,13', '1,14', '1,15',
+    '2,14', '2,15',
+    '3,15',
+    // Bottom-left staircase (starts from row J, index 7)
+    '7,0',
+    '8,0', '8,1',
+    '9,0', '9,1', '9,2',
+    '10,0', '10,1', '10,2', '10,3',
 ]);
 function isWallCell(r, c) {
     return WALL_CELLS.has(`${r},${c}`);
@@ -79,9 +78,9 @@ function isWallCell(r, c) {
 const EXIT_ROW = 0;
 const EXIT_COL = 0;
 
-// Entrance cell: bottom-right at staircase edge (players enter here)
+// Entrance cell: bottom-right corner (players enter here)
 const ENTRANCE_ROW = 10;
-const ENTRANCE_COL = 11;
+const ENTRANCE_COL = 15;
 
 // === GAME STATE ===
 const state = {
