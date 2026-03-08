@@ -86,7 +86,7 @@ const ENTRANCE_COL = 15;
 const state = {
     board: [],
     players: [],
-    monster: { row: 0, col: 0, dir: 'down' },
+    monster: { row: 0, col: 0, dir: 'right' },
     monsterDeck: [],
     usedCards: [],
     currentCard: null,
@@ -153,7 +153,7 @@ function initPlayers(count) {
 }
 
 function initMonster() {
-    state.monster = { row: 0, col: 0, dir: 'down' };
+    state.monster = { row: 0, col: 0, dir: 'right' };
 }
 
 function initDeck() {
